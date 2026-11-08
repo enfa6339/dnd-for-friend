@@ -182,13 +182,13 @@
                             <input type="text" value="Katsuya" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()">
                             <span class="text-[10px] text-slate-400">Init:</span>
                             <input type="number" value="18" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()">
-                            <button onclick="this.parentElement.remove(); updatePlayerTracker();" class="text-red-400 hover:text-red-300 px-1">✕</button>
+                            <button onclick="this.parentElement.remove(); updatePlayerTracker(); saveStateToCloud();" class="text-red-400 hover:text-red-300 px-1">✕</button>
                         </div>
                         <div class="flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 init-row">
                             <input type="text" value="G3 (Monster)" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()">
                             <span class="text-[10px] text-slate-400">Init:</span>
                             <input type="number" value="12" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()">
-                            <button onclick="this.parentElement.remove(); updatePlayerTracker();" class="text-red-400 hover:text-red-300 px-1">✕</button>
+                            <button onclick="this.parentElement.remove(); updatePlayerTracker(); saveStateToCloud();" class="text-red-400 hover:text-red-300 px-1">✕</button>
                         </div>
                     </div>
                     
@@ -264,7 +264,7 @@
 
     </div>
 
-    <!-- Script ระบบซิงค์ข้อมูล Realtime ครบวงจร (Tokens, Initiative, Chat Log, Scenes) -->
+    <!-- Script ระบบซิงค์ข้อมูล Realtime ครบวงจร -->
     <script>
         const SUPABASE_URL = 'https://jwiszrqkbhpybphnhnjj.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_n2RdEk-H_4TTjrckgk-DLQ_EVfv-5RL';
