@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Echoes from Noman - Canva Style VTT</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- โหลด Supabase JS Client สำหรับทำ Realtime Sync ข้ามเครื่อง -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         .bg-grid {
@@ -27,7 +28,7 @@
         <div class="flex items-center gap-3">
             <h1 class="text-sm font-bold text-amber-500">📜 Echoes from Noman VTT</h1>
             <span class="text-[11px] bg-cyan-950 text-cyan-300 px-2.5 py-1 rounded-full border border-cyan-800">Room: #NOMAN-01</span>
-            <span id="sync-status" class="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded border border-emerald-800">🟢 พร้อมใช้งาน</span>
+            <span id="sync-status" class="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded border border-emerald-800">🟢 เชื่อมต่อ Cloud แล้ว</span>
         </div>
         <div class="flex items-center gap-2">
             <button onclick="switchMode('player')" id="nav-player" class="px-3 py-1 bg-cyan-600 text-white rounded-lg text-xs font-bold transition shadow">🛡️ หน้าผู้เล่น</button>
@@ -44,7 +45,7 @@
         <main class="flex-1 bg-slate-950 bg-grid relative overflow-auto flex items-center justify-center p-6 select-none">
             <div id="battle-map" class="w-[900px] h-[700px] bg-slate-900/40 border-2 border-cyan-800/60 relative rounded-xl shadow-2xl overflow-hidden bg-center bg-no-repeat bg-cover">
                 
-                <!-- Container สำหรับแสดง Token ทั้งหมดในฉาก (รองรับ Grid Snap) -->
+                <!-- Container สำหรับแสดง Token ทั้งหมดในฉาก -->
                 <div id="tokens-container">
                     <div id="token-token-p1" class="absolute top-[120px] left-[120px] w-10 h-10 bg-blue-600 rounded-full border-2 border-white flex items-center justify-center font-bold text-xs shadow-lg cursor-grab active:cursor-grabbing z-10 overflow-hidden" onmousedown="startDrag(event, 'token-token-p1')">
                         <span class="token-label">Katsuya</span>
@@ -66,14 +67,13 @@
             <!-- 1. PLAYER PANEL (Character Sheet + Save Button) -->
             <div id="panel-player" class="p-4 space-y-4">
                 
-                <!-- กล่องแสดงลำดับเทิร์นสำหรับผู้เล่น -->
                 <div class="bg-cyan-950/40 border border-cyan-800/60 p-3 rounded-xl space-y-2">
                     <div class="flex justify-between items-center text-xs font-bold text-cyan-300">
                         <span>⚔️ Combat Turn Tracker (ลำดับการต่อสู้)</span>
                         <span id="player-round-indicator" class="text-[10px] bg-cyan-900 px-2 py-0.5 rounded text-cyan-200">Round 1</span>
                     </div>
                     <div id="player-shared-initiative" class="space-y-1 text-xs max-h-28 overflow-y-auto">
-                        <!-- รายการเทิร์นซิงค์อัตโนมัติ -->
+                        <!-- รายการเทิร์น -->
                     </div>
                 </div>
 
@@ -188,13 +188,13 @@
                             <input type="text" value="Katsuya" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()">
                             <span class="text-[10px] text-slate-400">Init:</span>
                             <input type="number" value="18" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()">
-                            <button onclick="this.parentElement.remove(); updatePlayerTracker();" class="text-red-400 hover:text-red-300 px-1">✕</button>
+                            <button onclick="this.parentElement.remove(); updatePlayerTracker(); saveStateToCloud();" class="text-red-400 hover:text-red-300 px-1">✕</button>
                         </div>
                         <div class="flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 init-row">
                             <input type="text" value="G3 (Monster)" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()">
                             <span class="text-[10px] text-slate-400">Init:</span>
                             <input type="number" value="12" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()">
-                            <button onclick="this.parentElement.remove(); updatePlayerTracker();" class="text-red-400 hover:text-red-300 px-1">✕</button>
+                            <button onclick="this.parentElement.remove(); updatePlayerTracker(); saveStateToCloud();" class="text-red-400 hover:text-red-300 px-1">✕</button>
                         </div>
                     </div>
                     
@@ -219,7 +219,7 @@
                 </div>
 
                 <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl space-y-3">
-                    <span class="font-bold text-xs text-amber-300">🪙 สร้าง Token ตัวละคร / มอนสเตอร์ (ล็อกลง Grid อัตโนมัติ)</span>
+                    <span class="font-bold text-xs text-amber-300">🪙 สร้าง Token ตัวละคร / มอนสเตอร์ (ล็อกลง Grid)</span>
                     <div class="space-y-2 text-xs">
                         <div>
                             <span class="text-slate-400 text-[11px]">ชื่อ Token:</span>
@@ -239,10 +239,7 @@
                         <button onclick="addNewScene()" class="text-[10px] bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold px-2 py-1 rounded transition">+ เพิ่มฉากใหม่</button>
                     </div>
                     <div id="scene-list" class="space-y-1.5 text-xs">
-                        <div class="p-2 bg-slate-900 border border-amber-500 rounded flex justify-between items-center">
-                            <span>ฉากที่ 1: Default Cave</span>
-                            <span class="text-[10px] text-amber-400">กำลังแสดง</span>
-                        </div>
+                        <!-- รายการฉาก -->
                     </div>
                 </div>
 
@@ -270,7 +267,7 @@
 
     </div>
 
-    <!-- Modal หน้าต่างเล่นวิดีโอ (YouTube / เพลงบรรเลง) -->
+    <!-- Modal หน้าต่างเล่นวิดีโอ -->
     <div id="video-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
         <div class="bg-slate-900 border border-slate-700 rounded-2xl w-[700px] p-5 space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -278,7 +275,7 @@
                 <button onclick="closeVideoModal()" class="text-slate-400 hover:text-white font-bold px-2 py-1 rounded bg-slate-800 text-xs">✕ ปิด</button>
             </div>
             <div class="space-y-2 text-xs">
-                <span class="text-slate-400">ใส่ลิงก์ YouTube (เช่น https://www.youtube.com/watch?v=xxxx หรือลิงก์ Embed):</span>
+                <span class="text-slate-400">ใส่ลิงก์ YouTube (เช่น https://www.youtube.com/watch?v=xxxx):</span>
                 <div class="flex gap-2">
                     <input type="text" id="youtube-url-input" placeholder="วางลิงก์ YouTube ที่นี่..." class="flex-1 bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
                     <button onclick="loadYouTubeVideo()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded transition">โหลดวิดีโอ</button>
@@ -290,13 +287,18 @@
         </div>
     </div>
 
-    <!-- Script ควบคุมระบบ (Grid Snap, Save Sheet, Video Player) -->
+    <!-- Script พร้อมระบบ Realtime Sync ข้ามเครื่อง 100% -->
     <script>
+        const SUPABASE_URL = 'https://jwiszrqkbhpybphnhnjj.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_n2RdEk-H_4TTjrckgk-DLQ_EVfv-5RL';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const ROOM_ID = 'noman-room-01';
+
         let scenes = [
             { id: 1, name: "ฉากที่ 1: Default Cave", bg: "" }
         ];
         let currentSceneId = 1;
-        const GRID_SIZE = 40; // ขนาดตาราง Grid 40px
+        const GRID_SIZE = 40;
 
         function switchMode(mode) {
             document.getElementById('panel-player').classList.add('hidden');
@@ -319,7 +321,7 @@
             }
         }
 
-        // --- ระบบบันทึก Character Sheet (Save) ---
+        // --- ระบบบันทึก Character Sheet ---
         function saveCharacterSheet() {
             const charData = {
                 name: document.getElementById('c-name').value,
@@ -342,12 +344,10 @@
                 equip: document.getElementById('c-equip').value,
                 traits: document.getElementById('c-traits').value
             };
-            
             localStorage.setItem('noman_character_sheet', JSON.stringify(charData));
             alert("💾 บันทึก Character Sheet สำเร็จเรียบร้อย!");
         }
 
-        // โหลดข้อมูลเมื่อเปิดเว็บ
         window.addEventListener('DOMContentLoaded', () => {
             const saved = localStorage.getItem('noman_character_sheet');
             if (saved) {
@@ -373,6 +373,9 @@
                     syncPlayerName();
                 } catch(e) { console.error(e); }
             }
+            renderSceneList();
+            updatePlayerTracker();
+            loadStateFromCloud();
         });
 
         function syncPlayerName() {
@@ -405,10 +408,12 @@
                     tokenDiv.style.backgroundSize = 'cover';
                     tokenDiv.style.backgroundPosition = 'center';
                     tokenDiv.innerHTML = `<span class="bg-slate-950/70 px-1 rounded text-[9px] text-white absolute bottom-0 truncate max-w-full">${name}</span>`;
+                    saveStateToCloud();
                 }
                 reader.readAsDataURL(imgInput.files[0]);
             } else {
                 tokenDiv.innerHTML = `<span class="token-label truncate px-1">${name}</span>`;
+                saveStateToCloud();
             }
 
             document.getElementById('tokens-container').appendChild(tokenDiv);
@@ -416,12 +421,13 @@
             const initList = document.getElementById('initiative-list');
             const row = document.createElement('div');
             row.className = "flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 init-row";
-            row.innerHTML = `<input type="text" value="${name}" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()"><span class="text-[10px] text-slate-400">Init:</span><input type="number" value="10" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()"><button onclick="this.parentElement.remove(); updatePlayerTracker();" class="text-red-400 hover:text-red-300 px-1">✕</button>`;
+            row.innerHTML = `<input type="text" value="${name}" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()"><span class="text-[10px] text-slate-400">Init:</span><input type="number" value="10" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()"><button onclick="this.parentElement.remove(); updatePlayerTracker(); saveStateToCloud();" class="text-red-400 hover:text-red-300 px-1">✕</button>`;
             initList.appendChild(row);
             updatePlayerTracker();
 
             nameInput.value = '';
             imgInput.value = '';
+            saveStateToCloud();
             alert(`สร้าง Token "${name}" ลงบนตาราง Grid เรียบร้อย!`);
         }
 
@@ -429,9 +435,10 @@
             const list = document.getElementById('initiative-list');
             const row = document.createElement('div');
             row.className = "flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 init-row";
-            row.innerHTML = `<input type="text" value="New Entity" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()"><span class="text-[10px] text-slate-400">Init:</span><input type="number" value="10" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()"><button onclick="this.parentElement.remove(); updatePlayerTracker();" class="text-red-400 hover:text-red-300 px-1">✕</button>`;
+            row.innerHTML = `<input type="text" value="New Entity" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()"><span class="text-[10px] text-slate-400">Init:</span><input type="number" value="10" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()"><button onclick="this.parentElement.remove(); updatePlayerTracker(); saveStateToCloud();" class="text-red-400 hover:text-red-300 px-1">✕</button>`;
             list.appendChild(row);
             updatePlayerTracker();
+            saveStateToCloud();
         }
 
         function sortInitiative() {
@@ -454,6 +461,7 @@
                 list.appendChild(r);
             });
             updatePlayerTracker();
+            saveStateToCloud();
         }
 
         function nextTurn() {
@@ -469,6 +477,7 @@
                     }
                 });
                 updatePlayerTracker();
+                saveStateToCloud();
             }
         }
 
@@ -476,6 +485,7 @@
             const list = document.getElementById('initiative-list');
             const rows = list.getElementsByClassName('init-row');
             const playerTracker = document.getElementById('player-shared-initiative');
+            if (!playerTracker) return;
             playerTracker.innerHTML = '';
 
             Array.from(rows).forEach((r, idx) => {
@@ -494,6 +504,7 @@
             });
         }
 
+        // --- ระบบจัดการฉาก (Scene Manager) ---
         function addNewScene() {
             const newId = scenes.length + 1;
             const sceneName = prompt("ตั้งชื่อฉากใหม่:", `ฉากที่ ${newId}: Battle Arena`);
@@ -505,6 +516,7 @@
 
         function renderSceneList() {
             const list = document.getElementById('scene-list');
+            if (!list) return;
             list.innerHTML = '';
             scenes.forEach(s => {
                 const isActive = s.id === currentSceneId;
@@ -519,9 +531,12 @@
             currentSceneId = id;
             const scene = scenes.find(s => s.id === id);
             const mapEl = document.getElementById('battle-map');
-            mapEl.style.backgroundImage = scene.bg ? `url('${scene.bg}')` : 'none';
-            document.getElementById('current-scene-label').innerText = scene.name;
+            if (scene && mapEl) {
+                mapEl.style.backgroundImage = scene.bg ? `url('${scene.bg}')` : 'none';
+                document.getElementById('current-scene-label').innerText = scene.name;
+            }
             renderSceneList();
+            saveStateToCloud();
         }
 
         function uploadSceneBackground(event) {
@@ -530,8 +545,11 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const scene = scenes.find(s => s.id === currentSceneId);
-                    scene.bg = e.target.result;
-                    document.getElementById('battle-map').style.backgroundImage = `url('${e.target.result}')`;
+                    if (scene) {
+                        scene.bg = e.target.result;
+                        document.getElementById('battle-map').style.backgroundImage = `url('${e.target.result}')`;
+                        saveStateToCloud();
+                    }
                 }
                 reader.readAsDataURL(file);
             }
@@ -539,8 +557,11 @@
 
         function clearSceneBackground() {
             const scene = scenes.find(s => s.id === currentSceneId);
-            scene.bg = "";
-            document.getElementById('battle-map').style.backgroundImage = 'none';
+            if (scene) {
+                scene.bg = "";
+                document.getElementById('battle-map').style.backgroundImage = 'none';
+                saveStateToCloud();
+            }
         }
 
         function toggleStealth(tokenId, hide) {
@@ -557,10 +578,12 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const label = event.target.parentElement;
-                    label.style.backgroundImage = `url('${e.target.result}')`;
-                    label.style.backgroundSize = 'cover';
-                    label.style.backgroundPosition = 'center';
-                    document.getElementById('char-img-text').style.display = 'none';
+                    if (label) {
+                        label.style.backgroundImage = `url('${e.target.result}')`;
+                        label.style.backgroundSize = 'cover';
+                        label.style.backgroundPosition = 'center';
+                        document.getElementById('char-img-text').style.display = 'none';
+                    }
                 }
                 reader.readAsDataURL(file);
             }
@@ -570,10 +593,13 @@
             const charName = document.getElementById('c-name').value || 'Katsuya';
             const result = Math.floor(Math.random() * sides) + 1;
             const log = document.getElementById('chat-log');
-            const item = document.createElement('div');
-            item.className = "p-1.5 bg-slate-900 rounded border-l-2 border-cyan-500 text-[11px]";
-            item.innerHTML = `<b>${charName}</b> ทอย <b class="text-slate-100">d${sides}</b> ได้: <b class="text-amber-400">${result}</b>`;
-            log.prepend(item);
+            if (log) {
+                const item = document.createElement('div');
+                item.className = "p-1.5 bg-slate-900 rounded border-l-2 border-cyan-500 text-[11px]";
+                item.innerHTML = `<b>${charName}</b> ทอย <b class="text-slate-100">d${sides}</b> ได้: <b class="text-amber-400">${result}</b>`;
+                log.prepend(item);
+            }
+            saveStateToCloud();
         }
 
         function handleChat(e) {
@@ -582,11 +608,14 @@
                 if (!val) return;
                 const charName = document.getElementById('c-name').value || 'Katsuya';
                 const log = document.getElementById('chat-log');
-                const item = document.createElement('div');
-                item.className = "p-1.5 bg-slate-900 rounded border-l-2 border-slate-500 text-[11px]";
-                item.innerHTML = `<span class="text-slate-400">${charName}:</span> ${val}`;
-                log.prepend(item);
+                if (log) {
+                    const item = document.createElement('div');
+                    item.className = "p-1.5 bg-slate-900 rounded border-l-2 border-slate-500 text-[11px]";
+                    item.innerHTML = `<span class="text-slate-400">${charName}:</span> ${val}`;
+                    log.prepend(item);
+                }
                 e.target.value = '';
+                saveStateToCloud();
             }
         }
 
@@ -616,7 +645,7 @@
             document.getElementById('video-container').innerHTML = `<iframe src="${embedUrl}" class="w-full h-full rounded-xl" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
         }
 
-        // --- ระบบลาก Token แบบ Grid Snap (จัดตำแหน่งลงล็อกตาราง 40px) ---
+        // --- ระบบลาก Token แบบ Grid Snap ---
         let activeToken = null;
         let startX = 0, startY = 0;
 
@@ -634,6 +663,7 @@
         function onDrag(e) {
             if (!activeToken) return;
             const mapEl = document.getElementById('battle-map');
+            if (!mapEl) return;
             const mapRect = mapEl.getBoundingClientRect();
             
             let x = e.clientX - mapRect.left - startX;
@@ -645,7 +675,6 @@
 
         function stopDrag() {
             if (activeToken) {
-                // คำนวณ Grid Snap (ปัดเศษตำแหน่งให้ลงล็อกตาราง Grid 40px พอดี)
                 let currentLeft = parseInt(activeToken.style.left) || 0;
                 let currentTop = parseInt(activeToken.style.top) || 0;
                 
@@ -654,11 +683,95 @@
                 
                 activeToken.style.left = snappedX + 'px';
                 activeToken.style.top = snappedY + 'px';
+                
+                saveStateToCloud(); // เซฟพิกัดลง Cloud ทันทีหลังลากวางเสร็จ
             }
             activeToken = null;
             document.removeEventListener('mousemove', onDrag);
             document.removeEventListener('mouseup', stopDrag);
         }
+
+        // --- ระบบซิงค์ข้อมูลผ่าน Supabase Cloud (Realtime) ---
+        async function saveStateToCloud() {
+            try {
+                const state = {
+                    tokensHTML: document.getElementById('tokens-container').innerHTML,
+                    initiativeHTML: document.getElementById('initiative-list').innerHTML,
+                    chatLogHTML: document.getElementById('chat-log').innerHTML,
+                    currentSceneId: currentSceneId,
+                    scenes: scenes
+                };
+                await supabaseClient
+                    .from('game_rooms')
+                    .upsert({ room_id: ROOM_ID, state: state, updated_at: new Date() });
+            } catch (err) {
+                console.warn("Cloud Sync Error:", err);
+            }
+        }
+
+        async function loadStateFromCloud() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('game_rooms')
+                    .select('state')
+                    .eq('room_id', ROOM_ID)
+                    .single();
+                
+                if (data && data.state) {
+                    if (data.state.tokensHTML) {
+                        document.getElementById('tokens-container').innerHTML = data.state.tokensHTML;
+                    }
+                    if (data.state.initiativeHTML) {
+                        document.getElementById('initiative-list').innerHTML = data.state.initiativeHTML;
+                        updatePlayerTracker();
+                    }
+                    if (data.state.chatLogHTML) {
+                        document.getElementById('chat-log').innerHTML = data.state.chatLogHTML;
+                    }
+                    if (data.state.scenes) {
+                        scenes = data.state.scenes;
+                        renderSceneList();
+                    }
+                    if (data.state.currentSceneId) {
+                        switchScene(data.state.currentSceneId);
+                    }
+                }
+            } catch (err) {
+                console.warn("Load State Warning:", err);
+            }
+        }
+
+        // ฟังอีเวนต์ Real-time อัปเดตหน้าจอของเพื่อนอัตโนมัติ
+        supabaseClient
+            .channel('room-sync')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'game_rooms', filter: `room_id=eq.${ROOM_ID}` }, payload => {
+                if (payload.new && payload.new.state) {
+                    const state = payload.new.state;
+                    if (state.tokensHTML) {
+                        document.getElementById('tokens-container').innerHTML = state.tokensHTML;
+                    }
+                    if (state.initiativeHTML) {
+                        document.getElementById('initiative-list').innerHTML = state.initiativeHTML;
+                        updatePlayerTracker();
+                    }
+                    if (state.chatLogHTML) {
+                        document.getElementById('chat-log').innerHTML = state.chatLogHTML;
+                    }
+                    if (state.scenes) {
+                        scenes = state.scenes;
+                        renderSceneList();
+                    }
+                    if (state.currentSceneId && state.currentSceneId !== currentSceneId) {
+                        currentSceneId = state.currentSceneId;
+                        const scene = scenes.find(s => s.id === currentSceneId);
+                        if (scene) {
+                            document.getElementById('battle-map').style.backgroundImage = scene.bg ? `url('${scene.bg}')` : 'none';
+                            document.getElementById('current-scene-label').innerText = scene.name;
+                        }
+                    }
+                }
+            })
+            .subscribe();
 
         switchMode('player');
         updatePlayerTracker();
