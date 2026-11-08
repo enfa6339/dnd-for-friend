@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Echoes from Noman - Canva Style VTT</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- โหลด Supabase JS Client สำหรับทำ Multiplayer Realtime -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         .bg-grid {
@@ -265,9 +264,8 @@
 
     </div>
 
-    <!-- Script ควบคุมระบบทั้งหมดเชื่อมต่อ Supabase Realtime -->
+    <!-- Script ระบบซิงค์ข้อมูล Realtime ครบวงจร (Tokens, Initiative, Chat Log, Scenes) -->
     <script>
-        // ตั้งค่า Supabase Client
         const SUPABASE_URL = 'https://jwiszrqkbhpybphnhnjj.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_n2RdEk-H_4TTjrckgk-DLQ_EVfv-5RL';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -342,22 +340,23 @@
             const initList = document.getElementById('initiative-list');
             const row = document.createElement('div');
             row.className = "flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 init-row";
-            row.innerHTML = `<input type="text" value="${name}" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()"><span class="text-[10px] text-slate-400">Init:</span><input type="number" value="10" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()"><button onclick="this.parentElement.remove(); updatePlayerTracker();" class="text-red-400 hover:text-red-300 px-1">✕</button>`;
+            row.innerHTML = `<input type="text" value="${name}" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()"><span class="text-[10px] text-slate-400">Init:</span><input type="number" value="10" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()"><button onclick="this.parentElement.remove(); updatePlayerTracker(); saveStateToCloud();" class="text-red-400 hover:text-red-300 px-1">✕</button>`;
             initList.appendChild(row);
             updatePlayerTracker();
 
             nameInput.value = '';
             imgInput.value = '';
-            alert(`สร้าง Token "${name}" ลงบนแผนที่เรียบร้อย!`);
+            saveStateToCloud();
         }
 
         function addInitiativeRow() {
             const list = document.getElementById('initiative-list');
             const row = document.createElement('div');
             row.className = "flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 init-row";
-            row.innerHTML = `<input type="text" value="New Entity" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()"><span class="text-[10px] text-slate-400">Init:</span><input type="number" value="10" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()"><button onclick="this.parentElement.remove(); updatePlayerTracker();" class="text-red-400 hover:text-red-300 px-1">✕</button>`;
+            row.innerHTML = `<input type="text" value="New Entity" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()"><span class="text-[10px] text-slate-400">Init:</span><input type="number" value="10" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()"><button onclick="this.parentElement.remove(); updatePlayerTracker(); saveStateToCloud();" class="text-red-400 hover:text-red-300 px-1">✕</button>`;
             list.appendChild(row);
             updatePlayerTracker();
+            saveStateToCloud();
         }
 
         function sortInitiative() {
@@ -380,7 +379,7 @@
                 list.appendChild(r);
             });
             updatePlayerTracker();
-            alert("จัดเรียงลำดับเทิร์น (Initiative) เรียบร้อยแล้ว!");
+            saveStateToCloud();
         }
 
         function nextTurn() {
@@ -396,6 +395,7 @@
                     }
                 });
                 updatePlayerTracker();
+                saveStateToCloud();
             }
         }
 
@@ -449,6 +449,7 @@
             mapEl.style.backgroundImage = scene.bg ? `url('${scene.bg}')` : 'none';
             document.getElementById('current-scene-label').innerText = scene.name;
             renderSceneList();
+            saveStateToCloud();
         }
 
         function uploadSceneBackground(event) {
@@ -503,6 +504,7 @@
             item.className = "p-1.5 bg-slate-900 rounded border-l-2 border-cyan-500 text-[11px]";
             item.innerHTML = `<b>${charName}</b> ทอย <b class="text-slate-100">d${sides}</b> ได้: <b class="text-amber-400">${result}</b>`;
             log.prepend(item);
+            saveStateToCloud();
         }
 
         function handleChat(e) {
@@ -516,10 +518,10 @@
                 item.innerHTML = `<span class="text-slate-400">${charName}:</span> ${val}`;
                 log.prepend(item);
                 e.target.value = '';
+                saveStateToCloud();
             }
         }
 
-        // --- ระบบลาก Token ที่แก้ไขด้วย getBoundingClientRect ให้ลากได้ปกติ 100% ---
         let activeToken = null;
         let startX = 0, startY = 0;
 
@@ -551,7 +553,7 @@
         function stopDrag() {
             if (activeToken) {
                 setTimeout(() => {
-                    saveStateToCloud(); // บันทึกพิกัดลง Cloud หลังลากวางเสร็จ
+                    saveStateToCloud();
                 }, 50);
             }
             activeToken = null;
@@ -559,10 +561,12 @@
             document.removeEventListener('mouseup', stopDrag);
         }
 
-        // --- ฟังก์ชันเชื่อมต่อ Realtime Sync กับ Supabase ---
+        // --- ฟังก์ชันบันทึกสถานะทั้งหมดลง Cloud ---
         async function saveStateToCloud() {
             const state = {
                 tokensHTML: document.getElementById('tokens-container').innerHTML,
+                initiativeHTML: document.getElementById('initiative-list').innerHTML,
+                chatLogHTML: document.getElementById('chat-log').innerHTML,
                 currentSceneId: currentSceneId,
                 scenes: scenes
             };
@@ -582,6 +586,13 @@
                 if (data.state.tokensHTML) {
                     document.getElementById('tokens-container').innerHTML = data.state.tokensHTML;
                 }
+                if (data.state.initiativeHTML) {
+                    document.getElementById('initiative-list').innerHTML = data.state.initiativeHTML;
+                    updatePlayerTracker();
+                }
+                if (data.state.chatLogHTML) {
+                    document.getElementById('chat-log').innerHTML = data.state.chatLogHTML;
+                }
                 if (data.state.scenes) {
                     scenes = data.state.scenes;
                     renderSceneList();
@@ -592,7 +603,7 @@
             }
         }
 
-        // เปิด Realtime ฟังการเปลี่ยนแปลงจากห้อง
+        // ฟังอีเวนต์ Realtime อัปเดตทุกอย่างอัตโนมัติ
         supabaseClient
             .channel('room-sync')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'game_rooms', filter: `room_id=eq.${ROOM_ID}` }, payload => {
@@ -600,6 +611,25 @@
                     const state = payload.new.state;
                     if (state.tokensHTML) {
                         document.getElementById('tokens-container').innerHTML = state.tokensHTML;
+                    }
+                    if (state.initiativeHTML) {
+                        document.getElementById('initiative-list').innerHTML = state.initiativeHTML;
+                        updatePlayerTracker();
+                    }
+                    if (state.chatLogHTML) {
+                        document.getElementById('chat-log').innerHTML = state.chatLogHTML;
+                    }
+                    if (state.scenes) {
+                        scenes = state.scenes;
+                        renderSceneList();
+                    }
+                    if (state.currentSceneId && state.currentSceneId !== currentSceneId) {
+                        currentSceneId = state.currentSceneId;
+                        const scene = scenes.find(s => s.id === currentSceneId);
+                        if (scene) {
+                            document.getElementById('battle-map').style.backgroundImage = scene.bg ? `url('${scene.bg}')` : 'none';
+                            document.getElementById('current-scene-label').innerText = scene.name;
+                        }
                     }
                 }
             })
