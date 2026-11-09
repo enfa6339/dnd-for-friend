@@ -94,11 +94,19 @@ input:focus-visible,button:focus-visible,select:focus-visible,textarea:focus-vis
       <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-2">
         <div class="flex justify-between items-center"><span class="font-bold text-xs text-slate-300">🎲 Quick Dice Roller</span><span id="dice-out" class="text-lg font-extrabold text-amber-400">-</span></div>
         <div class="grid grid-cols-4 gap-1.5">
-          <button onclick="rollDice(4)" class="py-2 bg-slate-900 hover:bg-cyan-600 text-slate-200 font-bold text-xs rounded-lg border border-slate-800 transition">d4</button>
-          <button onclick="rollDice(6)" class="py-2 bg-slate-900 hover:bg-cyan-600 text-slate-200 font-bold text-xs rounded-lg border border-slate-800 transition">d6</button>
-          <button onclick="rollDice(8)" class="py-2 bg-slate-900 hover:bg-cyan-600 text-slate-200 font-bold text-xs rounded-lg border border-slate-800 transition">d8</button>
-          <button onclick="rollDice(20)" class="py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-extrabold text-xs rounded-lg transition shadow">d20</button>
+          <button onclick="rollDice(4)" class="py-2 bg-slate-900 hover:bg-cyan-600 text-slate-200 font-bold border border-slate-800 text-xs rounded-lg transition">d4</button>
+          <button onclick="rollDice(6)" class="py-2 bg-slate-900 hover:bg-cyan-600 text-slate-200 font-bold border border-slate-800 text-xs rounded-lg transition">d6</button>
+          <button onclick="rollDice(8)" class="py-2 bg-slate-900 hover:bg-cyan-600 text-slate-200 font-bold border border-slate-800 text-xs rounded-lg transition">d8</button>
+          <button onclick="rollDice(10)" class="py-2 bg-slate-900 hover:bg-cyan-600 text-slate-200 font-bold border border-slate-800 text-xs rounded-lg transition">d10</button>
+          <button onclick="rollDice(12)" class="py-2 bg-slate-900 hover:bg-cyan-600 text-slate-200 font-bold border border-slate-800 text-xs rounded-lg transition">d12</button>
+          <button onclick="rollDice(20)" class="py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-extrabold shadow text-xs rounded-lg transition">d20</button>
+          <button onclick="rollDice(100)" class="py-2 bg-slate-900 hover:bg-cyan-600 text-slate-200 font-bold border border-slate-800 text-xs rounded-lg transition">d100</button>
         </div>
+        <div class="flex gap-2">
+          <input id="dice-expr" placeholder="สูตรทอย เช่น 2d6+3" class="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-cyan-500" onkeydown="if(event.key==='Enter')rollExpr()">
+          <button onclick="rollExpr()" class="px-3 bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-bold rounded transition">ทอย</button>
+        </div>
+        <div id="dice-detail" class="text-[11px] text-slate-400 min-h-[1rem] break-all"></div>
       </div>
     </div>
 
@@ -130,6 +138,19 @@ input:focus-visible,button:focus-visible,select:focus-visible,textarea:focus-vis
           <button onclick="showAll()" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded font-bold transition">แสดงทั้งหมด</button>
         </div>
       </div>
+      <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl space-y-2 text-xs">
+        <span class="font-bold text-slate-200">🤫 ทอยลับของ DM (ผู้เล่นไม่เห็น)</span>
+        <div class="flex gap-2">
+          <input id="secret-expr" placeholder="เช่น 1d20+5" class="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 focus:outline-none focus:border-purple-500" onkeydown="if(event.key==='Enter')secretRoll()">
+          <button onclick="secretRoll()" class="px-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded transition">ทอยลับ</button>
+        </div>
+        <div class="flex items-center justify-between gap-2"><span id="secret-out" class="text-amber-400 font-bold break-all">-</span><button onclick="announceSecret()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded font-bold shrink-0">ประกาศผล</button></div>
+      </div>
+      <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl space-y-2 text-xs">
+        <span class="font-bold text-slate-200">🔒 รหัสผ่านโหมด DM</span>
+        <p id="pass-state" class="text-slate-400"></p>
+        <button onclick="setDmPass()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded font-bold transition">ตั้ง / เปลี่ยน / ลบรหัสผ่าน</button>
+      </div>
     </div>
 
     <!-- MAP MAKER -->
@@ -156,6 +177,12 @@ input:focus-visible,button:focus-visible,select:focus-visible,textarea:focus-vis
         <span class="font-bold text-slate-200">🖼️ เปลี่ยนรูปพื้นหลังฉากปัจจุบัน</span>
         <input type="file" accept="image/*" onchange="uploadBg(event)" class="w-full text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-slate-950 cursor-pointer">
         <button onclick="clearBg()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold transition">ลบรูปพื้นหลังฉากนี้</button>
+      </div>
+      <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl space-y-2 text-xs">
+        <span class="font-bold text-slate-200">💾 สำรอง / นำเข้าข้อมูลห้อง</span>
+        <button onclick="exportData()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded font-bold transition">⬇️ ดาวน์โหลดไฟล์สำรอง (.json)</button>
+        <input type="file" accept=".json,application/json" onchange="importData(event)" class="w-full text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 cursor-pointer">
+        <p class="text-[10px] text-slate-500">นำเข้าแล้วจะแทนที่ข้อมูลทั้งห้อง (รหัสผ่าน DM เดิมยังอยู่)</p>
       </div>
     </div>
 
@@ -239,10 +266,29 @@ function addLog(m){S.log.push({m,t:new Date().toLocaleTimeString('th-TH',{hour:'
 
 /* ---------- Mode ---------- */
 const NAV={player:['nav-player','bg-cyan-600 text-white shadow'],'dm-control':['nav-dm-control','bg-purple-600 text-white shadow'],'dm-maker':['nav-dm-maker','bg-amber-600 text-slate-950 shadow']};
-function switchMode(m){mode=m;localStorage.setItem('noman_mode',m);render()}
+const hash=s=>{let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return String(4294967296*(2097151&h2)+(h1>>>0))};
+const locked=()=>!!S.dmHash&&sessionStorage.getItem('noman_dm')!==S.dmHash;
+function switchMode(m){
+  if(m!=='player'&&locked()){
+    const p=prompt('ใส่รหัสผ่านโหมด DM');if(p===null)return;
+    if(hash(p)!==S.dmHash){alert('รหัสผ่านไม่ถูกต้อง');return}
+    sessionStorage.setItem('noman_dm',S.dmHash);
+  }
+  mode=m;localStorage.setItem('noman_mode',m);render();
+}
+function setDmPass(){
+  const p=prompt(S.dmHash?'ใส่รหัสใหม่ (เว้นว่าง = ลบรหัสผ่าน)':'ตั้งรหัสผ่านโหมด DM');if(p===null)return;
+  if(p===''){S.dmHash='';sessionStorage.removeItem('noman_dm');addLog('🔓 ปิดรหัสผ่านโหมด DM')}
+  else{S.dmHash=hash(p);sessionStorage.setItem('noman_dm',S.dmHash);addLog('🔒 ตั้งรหัสผ่านโหมด DM')}
+  commit();
+}
 
 /* ---------- Render ---------- */
 function render(){
+  if(mode!=='player'&&locked())mode='player';
+  $('pass-state').textContent=S.dmHash?'🔒 มีรหัสผ่านแล้ว':'ยังไม่ได้ตั้งรหัสผ่าน (ใครก็เข้าโหมด DM ได้)';
   for(const k in NAV){
     $('panel-'+k).classList.toggle('hidden',k!==mode);
     $(NAV[k][0]).className='px-3 py-1 rounded-lg text-xs font-bold transition '+(k===mode?NAV[k][1]:'bg-slate-800 text-slate-300 hover:bg-slate-700');
@@ -260,7 +306,10 @@ function render(){
   const di=$('dm-init');di.innerHTML='';
   S.init.forEach((it,i)=>{const d=document.createElement('div');
     d.className='flex items-center gap-2 p-2 rounded border '+(i===S.turn?'bg-purple-950/60 border-purple-600':'bg-slate-900 border-slate-800');
-    d.innerHTML=`<span class="flex-1 font-bold text-slate-200 truncate">${esc(it.name)}</span><span class="text-amber-400 font-bold">${esc(it.val)}</span>`;
+    d.innerHTML=`<input class="flex-1 min-w-0 bg-transparent font-bold text-slate-200 border-b border-transparent focus:border-purple-500 focus:outline-none" value="${esc(it.name)}"><input type="number" class="w-14 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700" value="${esc(it.val)}">`;
+    const [ni,vi]=d.querySelectorAll('input');
+    ni.onchange=()=>{const n=ni.value.trim();if(n){it.name=n;commit()}};
+    vi.onchange=()=>{const v=parseFloat(vi.value);if(!isNaN(v)){it.val=v;commit()}};
     const x=document.createElement('button');x.textContent='✕';x.className='text-red-400 hover:text-red-300 px-1';x.setAttribute('aria-label','ลบ '+it.name);
     x.onclick=()=>{S.init.splice(i,1);if(S.turn>=S.init.length)S.turn=0;commit()};d.append(x);di.append(d)});
   const ss=$('stealth-sel'),keep=ss.value;ss.innerHTML='';
@@ -271,6 +320,8 @@ function render(){
     d.className='flex items-center gap-2 p-2 rounded border '+(s.id===S.scene?'bg-amber-950/50 border-amber-600':'bg-slate-900 border-slate-800');
     const b=document.createElement('button');b.className='flex-1 text-left text-slate-200 truncate';b.textContent=(s.id===S.scene?'● ':'')+s.name;
     b.onclick=()=>{S.scene=s.id;addLog('เปลี่ยนฉากเป็น '+s.name);commit()};d.append(b);
+    const r=document.createElement('button');r.textContent='✏️';r.className='px-1';r.setAttribute('aria-label','เปลี่ยนชื่อฉาก '+s.name);
+    r.onclick=()=>{const n=prompt('ชื่อฉาก',s.name);if(n&&n.trim()){s.name=n.trim();commit()}};d.append(r);
     if(S.scenes.length>1){const x=document.createElement('button');x.textContent='✕';x.className='text-red-400 hover:text-red-300 px-1';x.setAttribute('aria-label','ลบฉาก '+s.name);
       x.onclick=()=>{S.scenes=S.scenes.filter(k=>k.id!==s.id);S.tokens=S.tokens.filter(t=>t.scene!==s.id);if(S.scene===s.id)S.scene=S.scenes[0].id;commit()};d.append(x)}
     sl.append(d)});
@@ -316,7 +367,33 @@ function shrink(file,max,type,q){return new Promise(res=>{const f=new FileReader
   c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL(type,q))};i.src=f.result};f.readAsDataURL(file)})}
 
 /* ---------- Actions ---------- */
-function rollDice(n){const v=1+Math.floor(Math.random()*n);$('dice-out').textContent=v;addLog(`🎲 ${who()} ทอย d${n} ได้ ${v}`);commit()}
+function evalDice(expr){
+  const e=expr.replace(/\s+/g,'').toLowerCase();
+  if(!/^[+-]?(\d*d\d+|\d+)([+-](\d*d\d+|\d+))*$/.test(e))return null;
+  let total=0,out='';
+  for(const t of e.match(/[+-]?[^+-]+/g)){
+    const sg=t[0]==='-'?-1:1,bd=t.replace(/^[+-]/,''),dm=bd.match(/^(\d*)d(\d+)$/);
+    if(dm){const n=+dm[1]||1,f=+dm[2];if(n>50||f<2||f>1000)return null;
+      const r=Array.from({length:n},()=>1+Math.floor(Math.random()*f));
+      total+=sg*r.reduce((x,y)=>x+y,0);out+=(sg<0?'-':'+')+'['+r.join(',')+']'}
+    else{total+=sg*(+bd);out+=(sg<0?'-':'+')+bd}
+  }
+  return{total,detail:out.replace(/^\+/,'')};
+}
+function rollExpr(x){
+  const ex=(x||$('dice-expr').value).trim()||'1d20',r=evalDice(ex);
+  if(!r){$('dice-detail').textContent='สูตรไม่ถูกต้อง ลองแบบ 2d6+3 หรือ d20';return}
+  $('dice-out').textContent=r.total;$('dice-detail').textContent=`${ex} = ${r.detail}`;
+  addLog(`🎲 ${who()} ทอย ${ex} = ${r.detail} → ${r.total}`);commit();
+}
+function rollDice(n){rollExpr('1d'+n)}
+let secretMsg='';
+function secretRoll(){
+  const ex=$('secret-expr').value.trim()||'1d20',r=evalDice(ex);
+  if(!r){secretMsg='';$('secret-out').textContent='สูตรไม่ถูกต้อง';return}
+  secretMsg=`🎲 DM ทอย ${ex} = ${r.detail} → ${r.total}`;$('secret-out').textContent=`${ex} = ${r.detail} → ${r.total}`;
+}
+function announceSecret(){if(!secretMsg)return;addLog(secretMsg);secretMsg='';$('secret-out').textContent='-';commit()}
 function sendChat(){const i=$('chat-input'),m=i.value.trim();if(!m)return;addLog(`${who()}: ${m}`);i.value='';commit()}
 function addInit(){const n=$('i-name').value.trim(),v=parseFloat($('i-val').value);if(!n||isNaN(v))return;
   S.init.push({id:uid(),name:n,val:v});$('i-name').value=$('i-val').value='';commit()}
@@ -350,6 +427,29 @@ function saveChar(){
   document.querySelectorAll('.cf').forEach(i=>C[i.dataset.k]=i.value);
   localStorage.setItem('noman_character_sheet',JSON.stringify(C));
   const b=$('save-btn');b.textContent='✅ บันทึกแล้ว';setTimeout(()=>b.textContent='💾 บันทึก Character Sheet',1500);
+}
+
+/* ---------- Export / Import ---------- */
+function exportData(){
+  const c=Object.assign({},S);delete c.dmHash;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(c)],{type:'application/json'}));
+  a.download=`noman-${ROOM}-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function importData(e){
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(!Array.isArray(d.scenes)||!d.scenes.length||!Array.isArray(d.tokens))throw 0;
+      if(!confirm('นำเข้าไฟล์นี้จะแทนที่ข้อมูลทั้งห้อง ยืนยันหรือไม่?'))return;
+      const keep=S.dmHash||'';
+      S=Object.assign(def(),d);S.dmHash=keep;S.video=null;
+      if(!S.scenes.some(x=>x.id===S.scene))S.scene=S.scenes[0].id;
+      addLog('📥 นำเข้าข้อมูลสำรอง');commit();
+    }catch(err){alert('ไฟล์ไม่ถูกต้อง ใช้ได้เฉพาะไฟล์สำรองที่ดาวน์โหลดจากหน้านี้')}
+  };
+  r.readAsText(f);
 }
 
 /* ---------- YouTube ---------- */
