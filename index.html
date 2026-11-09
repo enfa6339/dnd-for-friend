@@ -171,8 +171,8 @@ input:focus-visible,button:focus-visible,select:focus-visible,textarea:focus-vis
 <div id="video-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
   <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-[700px] p-5 space-y-4 shadow-2xl">
     <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-      <h3 class="font-bold text-sm text-amber-400">📺 YouTube / Media Player <span class="text-[10px] text-slate-500 font-normal">(เล่นเฉพาะเครื่องนี้)</span></h3>
-      <button onclick="closeVideo()" class="text-slate-400 hover:text-white font-bold px-2 py-1 rounded bg-slate-800 text-xs">✕ ปิด</button>
+      <h3 class="font-bold text-sm text-amber-400">📺 YouTube / Media Player <span class="text-[10px] text-slate-500 font-normal">(ทุกคนในห้องเห็นพร้อมกัน)</span></h3>
+      <div class="flex gap-2"><button onclick="stopVideo()" class="text-red-300 hover:text-white font-bold px-2 py-1 rounded bg-red-900/60 text-xs">⏹ หยุดให้ทุกคน</button><button onclick="closeVideo()" class="text-slate-400 hover:text-white font-bold px-2 py-1 rounded bg-slate-800 text-xs">✕ ปิดเฉพาะเครื่องนี้</button></div>
     </div>
     <div class="flex gap-2 text-xs">
       <input id="yt-url" placeholder="วางลิงก์ YouTube ที่นี่..." class="flex-1 bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
@@ -189,7 +189,7 @@ const ROOM='NOMAN-01', GRID=40, MAXX=840, MAXY=680;
 const $=id=>document.getElementById(id);
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const def=()=>({scenes:[{id:'s1',name:'ฉากที่ 1: Default Cave',bg:''}],scene:'s1',tokens:[],init:[],turn:0,round:1,log:[]});
+const def=()=>({scenes:[{id:'s1',name:'ฉากที่ 1: Default Cave',bg:''}],scene:'s1',tokens:[],init:[],turn:0,round:1,log:[],video:null});
 function loadLocal(){try{const s=JSON.parse(localStorage.getItem('noman_state'));if(s&&s.scenes)return s}catch(e){}return def()}
 let S=loadLocal(), mode='player', sb=null, ch=null, dragging=false, saveT=null;
 const curScene=()=>S.scenes.find(x=>x.id===S.scene)||S.scenes[0];
@@ -215,7 +215,7 @@ function commit(){
 async function pull(){
   const {data,error}=await sb.from('game_rooms').select('state').eq('room_id',ROOM).maybeSingle();
   if(error){console.warn(error);setStatus('off');return}
-  if(data&&data.state&&data.state.scenes){S=data.state;try{localStorage.setItem('noman_state',JSON.stringify(S))}catch(e){}render()}else commit();
+  if(data&&data.state&&data.state.scenes){S=data.state;shownVid=vkey();try{localStorage.setItem('noman_state',JSON.stringify(S))}catch(e){}render()}else commit();
 }
 function connect(){
   setStatus('wait');
@@ -277,6 +277,7 @@ function render(){
   const lg=$('chat-log');lg.innerHTML='';
   S.log.forEach(e=>{const p=document.createElement('p');p.textContent=`[${e.t}] ${e.m}`;lg.append(p)});
   lg.scrollTop=lg.scrollHeight;
+  syncVideo();
 }
 function renderTokens(sc){
   const box=$('tokens-container');box.innerHTML='';
@@ -352,14 +353,26 @@ function saveChar(){
 }
 
 /* ---------- YouTube ---------- */
+const NOVID='<p>ยังไม่ได้โหลดวิดีโอ</p>';
+const vkey=()=>S.video?S.video.id+':'+S.video.n:null;
+let shownVid=null;
+function syncVideo(){
+  const k=vkey();if(k===shownVid)return;shownVid=k;
+  if(S.video){$('video-modal').classList.remove('hidden');
+    $('video-box').innerHTML=`<iframe class="w-full h-full" src="https://www.youtube.com/embed/${S.video.id}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`}
+  else{$('video-modal').classList.add('hidden');$('video-box').innerHTML=NOVID}
+}
 function openVideo(){$('video-modal').classList.remove('hidden')}
-function closeVideo(){$('video-modal').classList.add('hidden');$('video-box').innerHTML='<p>ยังไม่ได้โหลดวิดีโอ</p>'}
+function closeVideo(){$('video-modal').classList.add('hidden');$('video-box').innerHTML=NOVID}
+function stopVideo(){S.video=null;addLog('📺 หยุดวิดีโอ');commit()}
 function loadVideo(){
   const m=$('yt-url').value.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/);
-  $('video-box').innerHTML=m?`<iframe class="w-full h-full" src="https://www.youtube.com/embed/${m[1]}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`:'<p>ลิงก์ไม่ถูกต้อง ลองวางลิงก์จาก YouTube อีกครั้ง</p>';
+  if(!m){$('video-box').innerHTML='<p>ลิงก์ไม่ถูกต้อง ลองวางลิงก์จาก YouTube อีกครั้ง</p>';return}
+  S.video={id:m[1],n:Date.now()};addLog(`📺 ${who()} เปิดวิดีโอให้ทุกคน`);commit();
 }
 
 /* ---------- Start ---------- */
+shownVid=vkey();
 mode=localStorage.getItem('noman_mode')||'player';if(!NAV[mode])mode='player';
 render();
 if(window.supabase)connect();else setStatus('off');
