@@ -40,11 +40,10 @@
     <!-- Main Workspace -->
     <div class="flex-1 flex overflow-hidden relative">
 
-        <!-- Left Area: Battle Map / Scene Viewer -->
+        <!-- Left Area: Battle Map -->
         <main class="flex-1 bg-slate-950 bg-grid relative overflow-auto flex items-center justify-center p-6 select-none">
             <div id="battle-map" class="w-[900px] h-[700px] bg-slate-900/40 border-2 border-cyan-800/60 relative rounded-xl shadow-2xl overflow-hidden bg-center bg-no-repeat bg-cover">
                 
-                <!-- Container สำหรับ Token ทั้งหมด -->
                 <div id="tokens-container">
                     <div id="token-token-p1" class="absolute top-[120px] left-[120px] w-12 h-12 bg-blue-600 rounded-full border-2 border-white flex flex-col items-center justify-center font-bold text-xs shadow-lg cursor-grab active:cursor-grabbing z-10 overflow-hidden bg-cover bg-center group" onmousedown="startDrag(event, 'token-token-p1')">
                         <span class="token-label bg-slate-950/70 px-1 rounded text-[9px] text-white truncate max-w-full">Katsuya</span>
@@ -138,18 +137,6 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="border border-cyan-700 p-2 rounded bg-white/50">
-                            <div class="font-bold border-b border-cyan-700 pb-0.5 text-cyan-900">Equipment</div>
-                            <textarea id="c-equip" class="w-full h-12 bg-transparent resize-none focus:outline-none text-[11px]">- คาตานะ
-- วากิซาชิ</textarea>
-                        </div>
-                        <div class="border border-cyan-700 p-2 rounded bg-white/50">
-                            <div class="font-bold border-b border-cyan-700 pb-0.5 text-cyan-900">Traits Passive</div>
-                            <textarea id="c-traits" class="w-full h-12 bg-transparent resize-none focus:outline-none text-[10px]">- HP เหลือ 0 ใช้ Spell Sloth แทนได้</textarea>
-                        </div>
-                    </div>
-
                     <button onclick="saveCharacterSheet()" class="w-full py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold rounded shadow transition flex items-center justify-center gap-1.5">
                         💾 บันทึก Character Sheet
                     </button>
@@ -199,15 +186,12 @@
                     <button onclick="nextTurn()" class="w-full py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg transition mt-2">Next Turn ➔ (เปลี่ยนเทิร์น)</button>
                 </div>
 
-                <!-- ระบบควบคุมล่องหน/ซ่อนตัว เลือกได้ทุก Token -->
                 <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl space-y-3">
                     <span class="font-bold text-xs text-slate-200">👻 ควบคุมสถานะ Token (ล่องหน/ซ่อนตัว)</span>
                     <div class="space-y-2 text-xs">
                         <div>
                             <span class="text-slate-400 text-[11px]">เลือก Token:</span>
-                            <select id="stealth-token-select" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200 mt-0.5 focus:outline-none">
-                                <!-- อัปเดตรายชื่อ Token อัตโนมัติ -->
-                            </select>
+                            <select id="stealth-token-select" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200 mt-0.5 focus:outline-none"></select>
                         </div>
                         <div class="flex gap-2">
                             <button onclick="applyStealth(true)" class="flex-1 py-1.5 bg-purple-950 hover:bg-purple-900 text-purple-200 border border-purple-700 rounded font-bold transition">ซ่อน (Stealth)</button>
@@ -291,7 +275,7 @@
         </div>
     </div>
 
-    <!-- Script จัดการระบบและ Realtime Sync สด (Broadcast + Database) -->
+    <!-- Script จัดการระบบและ Realtime Sync -->
     <script>
         const SUPABASE_URL = 'https://jwiszrqkbhpybphnhnjj.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_n2RdEk-H_4TTjrckgk-DLQ_EVfv-5RL';
@@ -481,7 +465,6 @@
             saveStateToCloud();
         }
 
-        // --- แก้ไขปุ่มจัดเรียงคิว (Sort Initiative) ให้ถูกต้อง ไม่รีเซต ---
         function sortInitiative() {
             const list = document.getElementById('initiative-list');
             const rows = Array.from(list.getElementsByClassName('init-row'));
@@ -489,7 +472,7 @@
             rows.sort((a, b) => {
                 let valA = parseInt(a.querySelector('.c-init-val').value) || 0;
                 let valB = parseInt(b.querySelector('.c-init-val').value) || 0;
-                return valB - valA; // เรียงจากมากไปน้อย
+                return valB - valA;
             });
 
             list.innerHTML = '';
@@ -707,7 +690,7 @@
             document.removeEventListener('mouseup', stopDrag);
         }
 
-        // --- ระบบซิงค์ Supabase Live Broadcast ---
+        // --- ระบบซิงค์ Supabase Live Broadcast & DB ---
         const gameChannel = supabaseClient.channel('room-live-sync', {
             config: { broadcast: { ack: true } }
         });
