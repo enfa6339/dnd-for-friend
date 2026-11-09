@@ -27,7 +27,7 @@
         <div class="flex items-center gap-3">
             <h1 class="text-sm font-bold text-amber-500">📜 Echoes from Noman VTT</h1>
             <span class="text-[11px] bg-cyan-950 text-cyan-300 px-2.5 py-1 rounded-full border border-cyan-800">Room: #NOMAN-01</span>
-            <span id="sync-status" class="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded border border-emerald-800">🟢 เชื่อมต่อ Cloud แล้ว</span>
+            <span id="sync-status" class="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded border border-emerald-800">🟢 เชื่อมต่อ Cloud Realtime แล้ว</span>
         </div>
         <div class="flex items-center gap-2">
             <button onclick="switchMode('player')" id="nav-player" class="px-3 py-1 bg-cyan-600 text-white rounded-lg text-xs font-bold transition shadow">🛡️ หน้าผู้เล่น</button>
@@ -46,11 +46,13 @@
                 
                 <!-- Container สำหรับ Token ทั้งหมด -->
                 <div id="tokens-container">
-                    <div id="token-token-p1" class="absolute top-[120px] left-[120px] w-10 h-10 bg-blue-600 rounded-full border-2 border-white flex items-center justify-center font-bold text-xs shadow-lg cursor-grab active:cursor-grabbing z-10 overflow-hidden" onmousedown="startDrag(event, 'token-token-p1')">
-                        <span class="token-label">Katsuya</span>
+                    <div id="token-token-p1" class="absolute top-[120px] left-[120px] w-12 h-12 bg-blue-600 rounded-full border-2 border-white flex flex-col items-center justify-center font-bold text-xs shadow-lg cursor-grab active:cursor-grabbing z-10 overflow-hidden bg-cover bg-center group" onmousedown="startDrag(event, 'token-token-p1')">
+                        <span class="token-label bg-slate-950/70 px-1 rounded text-[9px] text-white truncate max-w-full">Katsuya</span>
+                        <button onclick="deleteToken('token-token-p1')" class="absolute top-0 right-0 bg-red-600 text-white text-[9px] px-1 rounded-bl opacity-0 group-hover:opacity-100 transition">✕</button>
                     </div>
-                    <div id="token-token-monster" class="absolute top-[200px] left-[240px] w-10 h-10 bg-red-600 rounded-full border-2 border-white flex items-center justify-center font-bold text-xs shadow-lg cursor-grab active:cursor-grabbing z-10 overflow-hidden" onmousedown="startDrag(event, 'token-token-monster')">
-                        <span class="token-label">G3</span>
+                    <div id="token-token-monster" class="absolute top-[200px] left-[240px] w-12 h-12 bg-red-600 rounded-full border-2 border-white flex flex-col items-center justify-center font-bold text-xs shadow-lg cursor-grab active:cursor-grabbing z-10 overflow-hidden bg-cover bg-center group" onmousedown="startDrag(event, 'token-token-monster')">
+                        <span class="token-label bg-slate-950/70 px-1 rounded text-[9px] text-white truncate max-w-full">G3</span>
+                        <button onclick="deleteToken('token-token-monster')" class="absolute top-0 right-0 bg-red-600 text-white text-[9px] px-1 rounded-bl opacity-0 group-hover:opacity-100 transition">✕</button>
                     </div>
                 </div>
 
@@ -197,15 +199,14 @@
                     <button onclick="nextTurn()" class="w-full py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg transition mt-2">Next Turn ➔ (เปลี่ยนเทิร์น)</button>
                 </div>
 
-                <!-- แก้ไข: ควบคุมสถานะล่องหนเลือก Token ได้ทุกตัวตามที่มีในฉาก -->
+                <!-- ระบบควบคุมล่องหน/ซ่อนตัว เลือกได้ทุก Token -->
                 <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl space-y-3">
                     <span class="font-bold text-xs text-slate-200">👻 ควบคุมสถานะ Token (ล่องหน/ซ่อนตัว)</span>
                     <div class="space-y-2 text-xs">
                         <div>
                             <span class="text-slate-400 text-[11px]">เลือก Token:</span>
                             <select id="stealth-token-select" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200 mt-0.5 focus:outline-none">
-                                <option value="token-token-p1">Katsuya</option>
-                                <option value="token-token-monster">G3</option>
+                                <!-- อัปเดตรายชื่อ Token อัตโนมัติ -->
                             </select>
                         </div>
                         <div class="flex gap-2">
@@ -290,7 +291,7 @@
         </div>
     </div>
 
-    <!-- Script จัดการทุกระบบและ Realtime Sync -->
+    <!-- Script จัดการระบบและ Realtime Sync ที่เสถียรขึ้น -->
     <script>
         const SUPABASE_URL = 'https://jwiszrqkbhpybphnhnjj.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_n2RdEk-H_4TTjrckgk-DLQ_EVfv-5RL';
@@ -302,6 +303,7 @@
         ];
         let currentSceneId = 1;
         const GRID_SIZE = 40;
+        let isRemoteUpdate = false;
 
         function switchMode(mode) {
             document.getElementById('panel-player').classList.add('hidden');
@@ -388,7 +390,7 @@
             }
         }
 
-        // --- แก้ไข: ระบบสร้าง Token พร้อมรูปภาพและซิงค์เข้า Dropdown ล่องหน ---
+        // --- ระบบสร้าง Token และลบ Token ---
         let tokenCount = 2;
         function createNewToken() {
             const nameInput = document.getElementById('new-token-name');
@@ -399,19 +401,19 @@
             const tokenId = `token-custom-${tokenCount}-${Date.now()}`;
             const tokenDiv = document.createElement('div');
             tokenDiv.id = tokenId;
-            tokenDiv.className = "absolute top-[160px] left-[160px] w-10 h-10 bg-purple-600 rounded-full border-2 border-white flex items-center justify-center font-bold text-xs shadow-lg cursor-grab active:cursor-grabbing z-10 overflow-hidden bg-cover bg-center";
+            tokenDiv.className = "absolute top-[160px] left-[160px] w-12 h-12 bg-purple-600 rounded-full border-2 border-white flex flex-col items-center justify-center font-bold text-xs shadow-lg cursor-grab active:cursor-grabbing z-10 overflow-hidden bg-cover bg-center group";
             tokenDiv.setAttribute('onmousedown', `startDrag(event, '${tokenId}')`);
 
             if (imgInput.files && imgInput.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     tokenDiv.style.backgroundImage = `url('${e.target.result}')`;
-                    tokenDiv.innerHTML = `<span class="bg-slate-950/70 px-1 rounded text-[9px] text-white absolute bottom-0 truncate max-w-full">${name}</span>`;
+                    tokenDiv.innerHTML = `<span class="bg-slate-950/70 px-1 rounded text-[9px] text-white absolute bottom-0 truncate max-w-full">${name}</span><button onclick="deleteToken('${tokenId}')" class="absolute top-0 right-0 bg-red-600 text-white text-[9px] px-1 rounded-bl opacity-0 group-hover:opacity-100 transition">✕</button>`;
                     finalizeNewToken(tokenId, name, tokenDiv);
                 }
                 reader.readAsDataURL(imgInput.files[0]);
             } else {
-                tokenDiv.innerHTML = `<span class="token-label truncate px-1">${name}</span>`;
+                tokenDiv.innerHTML = `<span class="token-label bg-slate-950/70 px-1 rounded text-[9px] text-white truncate max-w-full">${name}</span><button onclick="deleteToken('${tokenId}')" class="absolute top-0 right-0 bg-red-600 text-white text-[9px] px-1 rounded-bl opacity-0 group-hover:opacity-100 transition">✕</button>`;
                 finalizeNewToken(tokenId, name, tokenDiv);
             }
         }
@@ -432,6 +434,15 @@
             document.getElementById('new-token-img').value = '';
             saveStateToCloud();
             alert(`สร้าง Token "${name}" เรียบร้อย!`);
+        }
+
+        function deleteToken(tokenId) {
+            const token = document.getElementById(tokenId);
+            if (token) {
+                token.remove();
+                updateStealthDropdown();
+                saveStateToCloud();
+            }
         }
 
         function updateStealthDropdown() {
@@ -528,7 +539,6 @@
             });
         }
 
-        // --- ระบบจัดการฉาก (Scene Manager) ---
         function addNewScene() {
             const newId = scenes.length + 1;
             const sceneName = prompt("ตั้งชื่อฉากใหม่:", `ฉากที่ ${newId}: Battle Arena`);
@@ -697,11 +707,9 @@
             document.removeEventListener('mouseup', stopDrag);
         }
 
-        // --- ซิงค์ Cloud สมบูรณ์ทุกฟีเจอร์ ---
-        let isSyncing = false;
-
+        // --- ระบบซิงค์ Supabase Cloud ที่ปรับปรุงให้เสถียร ---
         async function saveStateToCloud() {
-            if (isSyncing) return;
+            if (isRemoteUpdate) return;
             try {
                 const state = {
                     tokensHTML: document.getElementById('tokens-container').innerHTML,
@@ -727,7 +735,7 @@
                     .single();
                 
                 if (data && data.state) {
-                    isSyncing = true;
+                    isRemoteUpdate = true;
                     if (data.state.tokensHTML) {
                         document.getElementById('tokens-container').innerHTML = data.state.tokensHTML;
                         updateStealthDropdown();
@@ -752,21 +760,21 @@
                             document.getElementById('current-scene-label').innerText = scene.name;
                         }
                     }
-                    isSyncing = false;
+                    isRemoteUpdate = false;
                 }
             } catch (err) {
                 console.warn("Load State Warning:", err);
-                isSyncing = false;
+                isRemoteUpdate = false;
             }
         }
 
-        // ระบบ Realtime ฟังการเปลี่ยนแปลงจากเพื่อน
+        // ฟัง Realtime Channel
         supabaseClient
-            .channel('room-sync-v2')
+            .channel('room-sync-v3')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'game_rooms', filter: `room_id=eq.${ROOM_ID}` }, payload => {
                 if (payload.new && payload.new.state) {
                     const state = payload.new.state;
-                    isSyncing = true;
+                    isRemoteUpdate = true;
                     if (state.tokensHTML) {
                         document.getElementById('tokens-container').innerHTML = state.tokensHTML;
                         updateStealthDropdown();
@@ -791,7 +799,7 @@
                             document.getElementById('current-scene-label').innerText = scene.name;
                         }
                     }
-                    isSyncing = false;
+                    isRemoteUpdate = false;
                 }
             })
             .subscribe();
