@@ -27,7 +27,7 @@
         <div class="flex items-center gap-3">
             <h1 class="text-sm font-bold text-amber-500">📜 Echoes from Noman VTT</h1>
             <span class="text-[11px] bg-cyan-950 text-cyan-300 px-2.5 py-1 rounded-full border border-cyan-800">Room: #NOMAN-01</span>
-            <span id="sync-status" class="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded border border-emerald-800">🟢 เชื่อมต่อ Cloud Live แล้ว</span>
+            <span id="sync-status" class="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded border border-emerald-800">🟢 Live Sync Active</span>
         </div>
         <div class="flex items-center gap-2">
             <button onclick="switchMode('player')" id="nav-player" class="px-3 py-1 bg-cyan-600 text-white rounded-lg text-xs font-bold transition shadow">🛡️ หน้าผู้เล่น</button>
@@ -199,7 +199,7 @@
                     <button onclick="nextTurn()" class="w-full py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg transition mt-2">Next Turn ➔ (เปลี่ยนเทิร์น)</button>
                 </div>
 
-                <!-- ระบบควบคุมล่องหน/ซ่อนตัว เลือกได้ทุก Token แบบเรียลไทม์ -->
+                <!-- ระบบควบคุมล่องหน/ซ่อนตัว เลือกได้ทุก Token -->
                 <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl space-y-3">
                     <span class="font-bold text-xs text-slate-200">👻 ควบคุมสถานะ Token (ล่องหน/ซ่อนตัว)</span>
                     <div class="space-y-2 text-xs">
@@ -291,7 +291,7 @@
         </div>
     </div>
 
-    <!-- Script ใช้ระบบ Supabase Broadcast เพื่อให้เห็นผลทันที -->
+    <!-- Script จัดการระบบและ Realtime Sync สด (Broadcast + Database) -->
     <script>
         const SUPABASE_URL = 'https://jwiszrqkbhpybphnhnjj.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_n2RdEk-H_4TTjrckgk-DLQ_EVfv-5RL';
@@ -481,6 +481,7 @@
             saveStateToCloud();
         }
 
+        // --- แก้ไขปุ่มจัดเรียงคิว (Sort Initiative) ให้ถูกต้อง ไม่รีเซต ---
         function sortInitiative() {
             const list = document.getElementById('initiative-list');
             const rows = Array.from(list.getElementsByClassName('init-row'));
@@ -488,7 +489,7 @@
             rows.sort((a, b) => {
                 let valA = parseInt(a.querySelector('.c-init-val').value) || 0;
                 let valB = parseInt(b.querySelector('.c-init-val').value) || 0;
-                return valB - valA;
+                return valB - valA; // เรียงจากมากไปน้อย
             });
 
             list.innerHTML = '';
@@ -706,7 +707,7 @@
             document.removeEventListener('mouseup', stopDrag);
         }
 
-        // --- ระบบซิงค์ผ่าน Supabase Broadcast & Table ---
+        // --- ระบบซิงค์ Supabase Live Broadcast ---
         const gameChannel = supabaseClient.channel('room-live-sync', {
             config: { broadcast: { ack: true } }
         });
@@ -721,12 +722,10 @@
                 scenes: scenes
             };
 
-            // 1. บันทึกลงตาราง Database
             await supabaseClient
                 .from('game_rooms')
                 .upsert({ room_id: ROOM_ID, state: state, updated_at: new Date() });
 
-            // 2. ส่ง Broadcast สัญญาณสดไปหาเพื่อนทันที
             gameChannel.send({
                 type: 'broadcast',
                 event: 'state-update',
@@ -779,18 +778,13 @@
             isRemoteUpdate = false;
         }
 
-        // ฟังสัญญาณ Broadcast สดจากเพื่อน
         gameChannel
             .on('broadcast', { event: 'state-update' }, payload => {
                 if (payload.payload) {
                     applyState(payload.payload);
                 }
             })
-            .subscribe((status) => {
-                if (status === 'SUBSCRIBED') {
-                    console.log("Connected to Realtime Broadcast!");
-                }
-            });
+            .subscribe();
 
         switchMode('player');
         updateStealthDropdown();
