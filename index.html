@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Echoes from Noman - Canva Style VTT</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- โหลด Supabase JS Client สำหรับทำ Realtime Sync ข้ามเครื่อง -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         .bg-grid {
@@ -45,7 +44,7 @@
         <main class="flex-1 bg-slate-950 bg-grid relative overflow-auto flex items-center justify-center p-6 select-none">
             <div id="battle-map" class="w-[900px] h-[700px] bg-slate-900/40 border-2 border-cyan-800/60 relative rounded-xl shadow-2xl overflow-hidden bg-center bg-no-repeat bg-cover">
                 
-                <!-- Container สำหรับแสดง Token ทั้งหมดในฉาก -->
+                <!-- Container สำหรับ Token ทั้งหมด -->
                 <div id="tokens-container">
                     <div id="token-token-p1" class="absolute top-[120px] left-[120px] w-10 h-10 bg-blue-600 rounded-full border-2 border-white flex items-center justify-center font-bold text-xs shadow-lg cursor-grab active:cursor-grabbing z-10 overflow-hidden" onmousedown="startDrag(event, 'token-token-p1')">
                         <span class="token-label">Katsuya</span>
@@ -64,17 +63,14 @@
         <!-- Right Sidebar -->
         <aside class="w-[420px] bg-slate-900 border-l border-slate-800 flex flex-col shrink-0 z-10 overflow-y-auto">
 
-            <!-- 1. PLAYER PANEL (Character Sheet + Save Button) -->
+            <!-- 1. PLAYER PANEL -->
             <div id="panel-player" class="p-4 space-y-4">
-                
                 <div class="bg-cyan-950/40 border border-cyan-800/60 p-3 rounded-xl space-y-2">
                     <div class="flex justify-between items-center text-xs font-bold text-cyan-300">
                         <span>⚔️ Combat Turn Tracker (ลำดับการต่อสู้)</span>
                         <span id="player-round-indicator" class="text-[10px] bg-cyan-900 px-2 py-0.5 rounded text-cyan-200">Round 1</span>
                     </div>
-                    <div id="player-shared-initiative" class="space-y-1 text-xs max-h-28 overflow-y-auto">
-                        <!-- รายการเทิร์น -->
-                    </div>
+                    <div id="player-shared-initiative" class="space-y-1 text-xs max-h-28 overflow-y-auto"></div>
                 </div>
 
                 <div class="sheet-paper p-3 rounded-lg shadow-xl space-y-3 text-xs">
@@ -84,14 +80,14 @@
                             <span class="text-[10px] text-slate-500 font-normal">Echoes from Noman</span>
                         </div>
                         <div class="flex gap-2 items-center">
-                            <label class="w-16 h-20 bg-slate-200 border border-dashed border-cyan-700 rounded flex flex-col items-center justify-center text-[9px] text-cyan-900 cursor-pointer overflow-hidden relative">
+                            <label id="char-avatar-label" class="w-16 h-20 bg-slate-200 border border-dashed border-cyan-700 rounded flex flex-col items-center justify-center text-[9px] text-cyan-900 cursor-pointer overflow-hidden relative bg-cover bg-center">
                                 <span id="char-img-text" class="text-center px-1">รูปตัวละคร</span>
                                 <input type="file" accept="image/*" class="hidden" onchange="loadCharAvatar(event)">
                             </label>
                             <div class="flex-1 space-y-1">
                                 <div class="flex gap-1">
-                                    <div class="flex-1">Name: <input type="text" id="c-name" value="Katsuya" oninput="syncPlayerName()" class="w-full bg-transparent border-b border-cyan-700 font-semibold focus:outline-none"></div>
-                                    <div class="w-20">Surname: <input type="text" id="c-surname" value="Kamo" class="w-full bg-transparent border-b border-cyan-700 font-semibold focus:outline-none"></div>
+                                    <div class="flex-1">Name: <input type="text" id="c-name" value="Katsuya" oninput="syncPlayerName(); saveStateToCloud();" class="w-full bg-transparent border-b border-cyan-700 font-semibold focus:outline-none"></div>
+                                    <div class="w-20">Surname: <input type="text" id="c-surname" value="Kamo" oninput="saveStateToCloud()" class="w-full bg-transparent border-b border-cyan-700 font-semibold focus:outline-none"></div>
                                 </div>
                                 <div class="flex gap-1 text-[11px]">
                                     <div>DOB: <input type="text" id="c-dob" value="7/12/-" class="w-16 bg-transparent border-b border-cyan-700 text-center focus:outline-none"></div>
@@ -152,7 +148,6 @@
                         </div>
                     </div>
 
-                    <!-- ปุ่ม Save Character Sheet -->
                     <button onclick="saveCharacterSheet()" class="w-full py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold rounded shadow transition flex items-center justify-center gap-1.5">
                         💾 บันทึก Character Sheet
                     </button>
@@ -185,15 +180,15 @@
                     
                     <div id="initiative-list" class="space-y-2 text-xs max-h-48 overflow-y-auto pr-1">
                         <div class="flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 init-row">
-                            <input type="text" value="Katsuya" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()">
+                            <input type="text" value="Katsuya" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker(); saveStateToCloud();">
                             <span class="text-[10px] text-slate-400">Init:</span>
-                            <input type="number" value="18" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()">
+                            <input type="number" value="18" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker(); saveStateToCloud();">
                             <button onclick="this.parentElement.remove(); updatePlayerTracker(); saveStateToCloud();" class="text-red-400 hover:text-red-300 px-1">✕</button>
                         </div>
                         <div class="flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 init-row">
-                            <input type="text" value="G3 (Monster)" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()">
+                            <input type="text" value="G3 (Monster)" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker(); saveStateToCloud();">
                             <span class="text-[10px] text-slate-400">Init:</span>
-                            <input type="number" value="12" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()">
+                            <input type="number" value="12" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker(); saveStateToCloud();">
                             <button onclick="this.parentElement.remove(); updatePlayerTracker(); saveStateToCloud();" class="text-red-400 hover:text-red-300 px-1">✕</button>
                         </div>
                     </div>
@@ -202,11 +197,21 @@
                     <button onclick="nextTurn()" class="w-full py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg transition mt-2">Next Turn ➔ (เปลี่ยนเทิร์น)</button>
                 </div>
 
+                <!-- แก้ไข: ควบคุมสถานะล่องหนเลือก Token ได้ทุกตัวตามที่มีในฉาก -->
                 <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl space-y-3">
-                    <span class="font-bold text-xs text-slate-200">👻 ควบคุมสถานะ Token (ล่องหน)</span>
-                    <div class="flex gap-2">
-                        <button onclick="toggleStealth('token-token-monster', true)" class="flex-1 py-1.5 bg-purple-950 hover:bg-purple-900 text-purple-200 border border-purple-700 rounded text-xs font-bold transition">ซ่อน G3</button>
-                        <button onclick="toggleStealth('token-token-monster', false)" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs font-bold transition">แสดงตัว</button>
+                    <span class="font-bold text-xs text-slate-200">👻 ควบคุมสถานะ Token (ล่องหน/ซ่อนตัว)</span>
+                    <div class="space-y-2 text-xs">
+                        <div>
+                            <span class="text-slate-400 text-[11px]">เลือก Token:</span>
+                            <select id="stealth-token-select" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200 mt-0.5 focus:outline-none">
+                                <option value="token-token-p1">Katsuya</option>
+                                <option value="token-token-monster">G3</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="applyStealth(true)" class="flex-1 py-1.5 bg-purple-950 hover:bg-purple-900 text-purple-200 border border-purple-700 rounded font-bold transition">ซ่อน (Stealth)</button>
+                            <button onclick="applyStealth(false)" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded font-bold transition">แสดงตัว</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -219,14 +224,14 @@
                 </div>
 
                 <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl space-y-3">
-                    <span class="font-bold text-xs text-amber-300">🪙 สร้าง Token ตัวละคร / มอนสเตอร์ (ล็อกลง Grid)</span>
+                    <span class="font-bold text-xs text-amber-300">🪙 สร้าง Token (รองรับรูปภาพ)</span>
                     <div class="space-y-2 text-xs">
                         <div>
                             <span class="text-slate-400 text-[11px]">ชื่อ Token:</span>
                             <input type="text" id="new-token-name" placeholder="เช่น Goblin, Hero" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 mt-0.5 focus:outline-none focus:border-amber-500">
                         </div>
                         <div>
-                            <span class="text-slate-400 text-[11px]">อัปโหลดรูปภาพ Token (ถ้ามี):</span>
+                            <span class="text-slate-400 text-[11px]">อัปโหลดรูปภาพ Token:</span>
                             <input type="file" id="new-token-img" accept="image/*" class="w-full mt-1 text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer">
                         </div>
                         <button onclick="createNewToken()" class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded-lg transition shadow">➕ วาง Token ลงบนแผนที่</button>
@@ -238,9 +243,7 @@
                         <span class="font-bold text-xs text-slate-200">📑 จัดการฉากทั้งหมดในแคมเปญ</span>
                         <button onclick="addNewScene()" class="text-[10px] bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold px-2 py-1 rounded transition">+ เพิ่มฉากใหม่</button>
                     </div>
-                    <div id="scene-list" class="space-y-1.5 text-xs">
-                        <!-- รายการฉาก -->
-                    </div>
+                    <div id="scene-list" class="space-y-1.5 text-xs"></div>
                 </div>
 
                 <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl space-y-3">
@@ -275,19 +278,19 @@
                 <button onclick="closeVideoModal()" class="text-slate-400 hover:text-white font-bold px-2 py-1 rounded bg-slate-800 text-xs">✕ ปิด</button>
             </div>
             <div class="space-y-2 text-xs">
-                <span class="text-slate-400">ใส่ลิงก์ YouTube (เช่น https://www.youtube.com/watch?v=xxxx):</span>
+                <span class="text-slate-400">ใส่ลิงก์ YouTube:</span>
                 <div class="flex gap-2">
                     <input type="text" id="youtube-url-input" placeholder="วางลิงก์ YouTube ที่นี่..." class="flex-1 bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
                     <button onclick="loadYouTubeVideo()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded transition">โหลดวิดีโอ</button>
                 </div>
             </div>
             <div id="video-container" class="w-full h-[360px] bg-slate-950 border border-slate-800 rounded-xl overflow-hidden flex items-center justify-center text-slate-500">
-                <p>ยังไม่ได้โหลดวิดีโอ (ใส่ลิงก์ด้านบนแล้วกดโหลด)</p>
+                <p>ยังไม่ได้โหลดวิดีโอ</p>
             </div>
         </div>
     </div>
 
-    <!-- Script พร้อมระบบ Realtime Sync ข้ามเครื่อง 100% -->
+    <!-- Script จัดการทุกระบบและ Realtime Sync -->
     <script>
         const SUPABASE_URL = 'https://jwiszrqkbhpybphnhnjj.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_n2RdEk-H_4TTjrckgk-DLQ_EVfv-5RL';
@@ -321,7 +324,6 @@
             }
         }
 
-        // --- ระบบบันทึก Character Sheet ---
         function saveCharacterSheet() {
             const charData = {
                 name: document.getElementById('c-name').value,
@@ -373,8 +375,6 @@
                     syncPlayerName();
                 } catch(e) { console.error(e); }
             }
-            renderSceneList();
-            updatePlayerTracker();
             loadStateFromCloud();
         });
 
@@ -388,6 +388,7 @@
             }
         }
 
+        // --- แก้ไข: ระบบสร้าง Token พร้อมรูปภาพและซิงค์เข้า Dropdown ล่องหน ---
         let tokenCount = 2;
         function createNewToken() {
             const nameInput = document.getElementById('new-token-name');
@@ -395,47 +396,76 @@
             const name = nameInput.value.trim() || `Token ${tokenCount + 1}`;
             tokenCount++;
 
-            const tokenDiv = document.createElement('div');
             const tokenId = `token-custom-${tokenCount}-${Date.now()}`;
+            const tokenDiv = document.createElement('div');
             tokenDiv.id = tokenId;
-            tokenDiv.className = "absolute top-[160px] left-[160px] w-10 h-10 bg-purple-600 rounded-full border-2 border-white flex items-center justify-center font-bold text-xs shadow-lg cursor-grab active:cursor-grabbing z-10 overflow-hidden";
+            tokenDiv.className = "absolute top-[160px] left-[160px] w-10 h-10 bg-purple-600 rounded-full border-2 border-white flex items-center justify-center font-bold text-xs shadow-lg cursor-grab active:cursor-grabbing z-10 overflow-hidden bg-cover bg-center";
             tokenDiv.setAttribute('onmousedown', `startDrag(event, '${tokenId}')`);
 
             if (imgInput.files && imgInput.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     tokenDiv.style.backgroundImage = `url('${e.target.result}')`;
-                    tokenDiv.style.backgroundSize = 'cover';
-                    tokenDiv.style.backgroundPosition = 'center';
                     tokenDiv.innerHTML = `<span class="bg-slate-950/70 px-1 rounded text-[9px] text-white absolute bottom-0 truncate max-w-full">${name}</span>`;
-                    saveStateToCloud();
+                    finalizeNewToken(tokenId, name, tokenDiv);
                 }
                 reader.readAsDataURL(imgInput.files[0]);
             } else {
                 tokenDiv.innerHTML = `<span class="token-label truncate px-1">${name}</span>`;
-                saveStateToCloud();
+                finalizeNewToken(tokenId, name, tokenDiv);
             }
+        }
 
+        function finalizeNewToken(tokenId, name, tokenDiv) {
             document.getElementById('tokens-container').appendChild(tokenDiv);
             
             const initList = document.getElementById('initiative-list');
             const row = document.createElement('div');
             row.className = "flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 init-row";
-            row.innerHTML = `<input type="text" value="${name}" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()"><span class="text-[10px] text-slate-400">Init:</span><input type="number" value="10" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()"><button onclick="this.parentElement.remove(); updatePlayerTracker(); saveStateToCloud();" class="text-red-400 hover:text-red-300 px-1">✕</button>`;
+            row.innerHTML = `<input type="text" value="${name}" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker(); saveStateToCloud();"><span class="text-[10px] text-slate-400">Init:</span><input type="number" value="10" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker(); saveStateToCloud();"><button onclick="this.parentElement.remove(); updatePlayerTracker(); saveStateToCloud();" class="text-red-400 hover:text-red-300 px-1">✕</button>`;
             initList.appendChild(row);
+
+            updateStealthDropdown();
             updatePlayerTracker();
 
-            nameInput.value = '';
-            imgInput.value = '';
+            document.getElementById('new-token-name').value = '';
+            document.getElementById('new-token-img').value = '';
             saveStateToCloud();
-            alert(`สร้าง Token "${name}" ลงบนตาราง Grid เรียบร้อย!`);
+            alert(`สร้าง Token "${name}" เรียบร้อย!`);
+        }
+
+        function updateStealthDropdown() {
+            const select = document.getElementById('stealth-token-select');
+            if (!select) return;
+            select.innerHTML = '';
+            const tokens = document.querySelectorAll('#tokens-container > div');
+            tokens.forEach(t => {
+                const labelEl = t.querySelector('.token-label') || t.querySelector('span');
+                const tName = labelEl ? labelEl.innerText : t.id;
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.innerText = tName;
+                select.appendChild(opt);
+            });
+        }
+
+        function applyStealth(hide) {
+            const select = document.getElementById('stealth-token-select');
+            if (!select) return;
+            const tokenId = select.value;
+            const token = document.getElementById(tokenId);
+            if (token) {
+                token.style.opacity = hide ? '0.2' : '1';
+                token.style.filter = hide ? 'grayscale(100%)' : 'none';
+                saveStateToCloud();
+            }
         }
 
         function addInitiativeRow() {
             const list = document.getElementById('initiative-list');
             const row = document.createElement('div');
             row.className = "flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 init-row";
-            row.innerHTML = `<input type="text" value="New Entity" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker()"><span class="text-[10px] text-slate-400">Init:</span><input type="number" value="10" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker()"><button onclick="this.parentElement.remove(); updatePlayerTracker(); saveStateToCloud();" class="text-red-400 hover:text-red-300 px-1">✕</button>`;
+            row.innerHTML = `<input type="text" value="New Entity" class="flex-1 bg-transparent text-slate-200 font-bold focus:outline-none c-name-input" oninput="updatePlayerTracker(); saveStateToCloud();"><span class="text-[10px] text-slate-400">Init:</span><input type="number" value="10" class="w-12 bg-slate-950 text-center text-amber-400 font-bold rounded p-1 border border-slate-700 c-init-val" oninput="updatePlayerTracker(); saveStateToCloud();"><button onclick="this.parentElement.remove(); updatePlayerTracker(); saveStateToCloud();" class="text-red-400 hover:text-red-300 px-1">✕</button>`;
             list.appendChild(row);
             updatePlayerTracker();
             saveStateToCloud();
@@ -453,11 +483,7 @@
 
             list.innerHTML = '';
             rows.forEach((r, idx) => {
-                if (idx === 0) {
-                    r.className = "flex items-center gap-2 bg-purple-950/60 p-2 rounded border border-purple-500 init-row";
-                } else {
-                    r.className = "flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 init-row";
-                }
+                r.className = idx === 0 ? "flex items-center gap-2 bg-purple-950/60 p-2 rounded border border-purple-500 init-row" : "flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 init-row";
                 list.appendChild(r);
             });
             updatePlayerTracker();
@@ -470,11 +496,7 @@
             if (rows.length > 0) {
                 list.appendChild(rows[0]);
                 Array.from(rows).forEach((r, idx) => {
-                    if (idx === 0) {
-                        r.className = "flex items-center gap-2 bg-purple-950/60 p-2 rounded border border-purple-500 init-row";
-                    } else {
-                        r.className = "flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 init-row";
-                    }
+                    r.className = idx === 0 ? "flex items-center gap-2 bg-purple-950/60 p-2 rounded border border-purple-500 init-row" : "flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-800 init-row";
                 });
                 updatePlayerTracker();
                 saveStateToCloud();
@@ -489,8 +511,10 @@
             playerTracker.innerHTML = '';
 
             Array.from(rows).forEach((r, idx) => {
-                const name = r.querySelector('.c-name-input').value || 'Unknown';
-                const init = r.querySelector('.c-init-val').value || '0';
+                const nameInput = r.querySelector('.c-name-input');
+                const initInput = r.querySelector('.c-init-val');
+                const name = nameInput ? nameInput.value : 'Unknown';
+                const init = initInput ? initInput.value : '0';
                 
                 const div = document.createElement('div');
                 if (idx === 0) {
@@ -564,24 +588,14 @@
             }
         }
 
-        function toggleStealth(tokenId, hide) {
-            const token = document.getElementById(tokenId);
-            if (token) {
-                token.style.opacity = hide ? '0.15' : '1';
-                token.style.filter = hide ? 'grayscale(100%)' : 'none';
-            }
-        }
-
         function loadCharAvatar(event) {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const label = event.target.parentElement;
+                    const label = document.getElementById('char-avatar-label');
                     if (label) {
                         label.style.backgroundImage = `url('${e.target.result}')`;
-                        label.style.backgroundSize = 'cover';
-                        label.style.backgroundPosition = 'center';
                         document.getElementById('char-img-text').style.display = 'none';
                     }
                 }
@@ -619,20 +633,18 @@
             }
         }
 
-        // --- ระบบเล่นวิดีโอ Modal ---
         function openVideoModal() {
             document.getElementById('video-modal').classList.remove('hidden');
         }
 
         function closeVideoModal() {
             document.getElementById('video-modal').classList.add('hidden');
-            document.getElementById('video-container').innerHTML = '<p>ยังไม่ได้โหลดวิดีโอ (ใส่ลิงก์ด้านบนแล้วกดโหลด)</p>';
+            document.getElementById('video-container').innerHTML = '<p>ยังไม่ได้โหลดวิดีโอ</p>';
         }
 
         function loadYouTubeVideo() {
             const rawUrl = document.getElementById('youtube-url-input').value.trim();
             if (!rawUrl) return;
-            
             let embedUrl = rawUrl;
             if (rawUrl.includes('watch?v=')) {
                 const videoId = rawUrl.split('watch?v=')[1].split('&')[0];
@@ -641,7 +653,6 @@
                 const videoId = rawUrl.split('youtu.be/')[1].split('?')[0];
                 embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
             }
-
             document.getElementById('video-container').innerHTML = `<iframe src="${embedUrl}" class="w-full h-full rounded-xl" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
         }
 
@@ -665,10 +676,8 @@
             const mapEl = document.getElementById('battle-map');
             if (!mapEl) return;
             const mapRect = mapEl.getBoundingClientRect();
-            
             let x = e.clientX - mapRect.left - startX;
             let y = e.clientY - mapRect.top - startY;
-            
             activeToken.style.left = x + 'px';
             activeToken.style.top = y + 'px';
         }
@@ -677,22 +686,22 @@
             if (activeToken) {
                 let currentLeft = parseInt(activeToken.style.left) || 0;
                 let currentTop = parseInt(activeToken.style.top) || 0;
-                
                 let snappedX = Math.round(currentLeft / GRID_SIZE) * GRID_SIZE;
                 let snappedY = Math.round(currentTop / GRID_SIZE) * GRID_SIZE;
-                
                 activeToken.style.left = snappedX + 'px';
                 activeToken.style.top = snappedY + 'px';
-                
-                saveStateToCloud(); // เซฟพิกัดลง Cloud ทันทีหลังลากวางเสร็จ
+                saveStateToCloud();
             }
             activeToken = null;
             document.removeEventListener('mousemove', onDrag);
             document.removeEventListener('mouseup', stopDrag);
         }
 
-        // --- ระบบซิงค์ข้อมูลผ่าน Supabase Cloud (Realtime) ---
+        // --- ซิงค์ Cloud สมบูรณ์ทุกฟีเจอร์ ---
+        let isSyncing = false;
+
         async function saveStateToCloud() {
+            if (isSyncing) return;
             try {
                 const state = {
                     tokensHTML: document.getElementById('tokens-container').innerHTML,
@@ -718,8 +727,10 @@
                     .single();
                 
                 if (data && data.state) {
+                    isSyncing = true;
                     if (data.state.tokensHTML) {
                         document.getElementById('tokens-container').innerHTML = data.state.tokensHTML;
+                        updateStealthDropdown();
                     }
                     if (data.state.initiativeHTML) {
                         document.getElementById('initiative-list').innerHTML = data.state.initiativeHTML;
@@ -733,22 +744,32 @@
                         renderSceneList();
                     }
                     if (data.state.currentSceneId) {
-                        switchScene(data.state.currentSceneId);
+                        currentSceneId = data.state.currentSceneId;
+                        const scene = scenes.find(s => s.id === currentSceneId);
+                        const mapEl = document.getElementById('battle-map');
+                        if (scene && mapEl) {
+                            mapEl.style.backgroundImage = scene.bg ? `url('${scene.bg}')` : 'none';
+                            document.getElementById('current-scene-label').innerText = scene.name;
+                        }
                     }
+                    isSyncing = false;
                 }
             } catch (err) {
                 console.warn("Load State Warning:", err);
+                isSyncing = false;
             }
         }
 
-        // ฟังอีเวนต์ Real-time อัปเดตหน้าจอของเพื่อนอัตโนมัติ
+        // ระบบ Realtime ฟังการเปลี่ยนแปลงจากเพื่อน
         supabaseClient
-            .channel('room-sync')
+            .channel('room-sync-v2')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'game_rooms', filter: `room_id=eq.${ROOM_ID}` }, payload => {
                 if (payload.new && payload.new.state) {
                     const state = payload.new.state;
+                    isSyncing = true;
                     if (state.tokensHTML) {
                         document.getElementById('tokens-container').innerHTML = state.tokensHTML;
+                        updateStealthDropdown();
                     }
                     if (state.initiativeHTML) {
                         document.getElementById('initiative-list').innerHTML = state.initiativeHTML;
@@ -761,19 +782,22 @@
                         scenes = state.scenes;
                         renderSceneList();
                     }
-                    if (state.currentSceneId && state.currentSceneId !== currentSceneId) {
+                    if (state.currentSceneId) {
                         currentSceneId = state.currentSceneId;
                         const scene = scenes.find(s => s.id === currentSceneId);
-                        if (scene) {
-                            document.getElementById('battle-map').style.backgroundImage = scene.bg ? `url('${scene.bg}')` : 'none';
+                        const mapEl = document.getElementById('battle-map');
+                        if (scene && mapEl) {
+                            mapEl.style.backgroundImage = scene.bg ? `url('${scene.bg}')` : 'none';
                             document.getElementById('current-scene-label').innerText = scene.name;
                         }
                     }
+                    isSyncing = false;
                 }
             })
             .subscribe();
 
         switchMode('player');
+        updateStealthDropdown();
         updatePlayerTracker();
     </script>
 </body>
